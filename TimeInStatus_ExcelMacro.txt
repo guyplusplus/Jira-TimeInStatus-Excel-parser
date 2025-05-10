@@ -1,0 +1,140 @@
+' https://github.com/guyplusplus/Jira-TimeInStatus-Excel-parser
+' Author: guyplusplus
+' Apache License 2.0
+
+Sub ProcessTimeInStatus()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    Dim lastCol As Long, lastRow As Long, i As Long, j As Long
+    Dim colToDelete As Collection
+    Set colToDelete = New Collection
+
+    Dim colName As String
+
+    ' Step 1: Delete columns starting with "[TiS]"
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For i = lastCol To 1 Step -1
+        colName = ws.Cells(1, i).Value
+        If Left(colName, 5) = "[TiS]" Then
+            ws.Columns(i).Delete
+        End If
+    Next i
+
+    ' Step 2: Initialize statusID to statusName dictionary
+    Dim statusDict As Object
+    Set statusDict = CreateObject("Scripting.Dictionary")
+    statusDict.Add "1", "OPEN"
+    statusDict.Add "3", "In Progress"
+    statusDict.Add "6", "Closed"
+    statusDict.Add "10000", "To Do"
+    statusDict.Add "10001", "Done"
+    statusDict.Add "10157", "Ready to Test"
+    statusDict.Add "10158", "Testing"
+    statusDict.Add "10178", "REJECTED"
+    statusDict.Add "10207", "Blocked"
+    statusDict.Add "10277", "CODE REVIEW"
+    statusDict.Add "10385", "Bug Rejected"
+    statusDict.Add "10386", "Reopen"
+    statusDict.Add "10387", "Req in progress"
+    statusDict.Add "10388", "Req blocked"
+    statusDict.Add "10390", "Req Ready for Dev"
+    statusDict.Add "10399", "Code Reviewed/Merged"
+
+    ' Step 3: Locate "Custom field ([CHART] Time in Status)" column
+    Dim tisColIndex As Long
+    tisColIndex = 0
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For i = 1 To lastCol
+        If ws.Cells(1, i).Value = "Custom field ([CHART] Time in Status)" Then
+            tisColIndex = i
+            Exit For
+        End If
+    Next i
+
+    If tisColIndex = 0 Then
+        MsgBox "Column 'Custom field ([CHART] Time in Status)' not found.", vbCritical
+        Exit Sub
+    End If
+
+    lastRow = ws.Cells(ws.Rows.Count, tisColIndex).End(xlUp).Row
+
+    ' Prepare to track dynamically added column positions
+    Dim tisColIndexes As Object
+    Set tisColIndexes = CreateObject("Scripting.Dictionary")
+    
+    ' Optional: create status columns in the order requested by users
+    Dim orderedStatusIDs As Variant, orderedStatusID As Variant
+    orderedStatusIDs = Array("1", "10387", "10388", "10390", "10000", "3", "10399", "10277", "10157", "10158", "10001", "10385", "10207", "10178", "10386", "6")
+    For Each orderedStatusID in orderedStatusIDs
+        Dim statusName As String
+        If statusDict.exists(orderedStatusID) Then
+            statusName = statusDict(orderedStatusID)
+        Else
+            statusName = orderedStatusID
+        End If
+        Dim statusCountColHeader As String, statusDurationColHeader As String
+        statusCountColHeader = "[TiS] " & statusName & " - Count"
+        statusDurationColHeader = "[TiS] " & statusName & " - Duration"
+        ws.Cells(1, ws.Columns.Count).End(xlToLeft).Offset(0, 1).Value = statusCountColHeader
+        tisColIndexes.Add statusCountColHeader, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+        ws.Cells(1, ws.Columns.Count).End(xlToLeft).Offset(0, 1).Value = statusDurationColHeader
+        tisColIndexes.Add statusDurationColHeader, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    Next orderedStatusID
+
+    ' Step 4: Process each row
+    For i = 2 To lastRow
+        Dim entry As String
+        entry = ws.Cells(i, tisColIndex).Value
+
+        If Trim(entry) <> "" Then
+            Dim parts() As String
+            parts = Split(entry, "_*|*_")
+
+            Dim k As Long
+            For k = LBound(parts) To UBound(parts)
+                Dim itemParts() As String
+                itemParts = Split(parts(k), "_*:*_")
+                If UBound(itemParts) = 2 Then
+                    Dim statusID As String, inStatusCount As String, durationMs As String
+                    statusID = itemParts(0)
+                    inStatusCount = itemParts(1)
+                    durationMs = itemParts(2)
+
+                    If statusDict.exists(statusID) Then
+                        statusName = statusDict(statusID)
+                    Else
+                        statusName = statusID
+                    End If
+
+                    statusCountColHeader = "[TiS] " & statusName & " - Count"
+                    statusDurationColHeader = "[TiS] " & statusName & " - Duration"
+
+                    ' Ensure columns exist
+                    If Not tisColIndexes.exists(statusCountColHeader) Then
+                        ws.Cells(1, ws.Columns.Count).End(xlToLeft).Offset(0, 1).Value = statusCountColHeader
+                        tisColIndexes.Add statusCountColHeader, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+                    End If
+                    If Not tisColIndexes.exists(statusDurationColHeader) Then
+                        ws.Cells(1, ws.Columns.Count).End(xlToLeft).Offset(0, 1).Value = statusDurationColHeader
+                        tisColIndexes.Add statusDurationColHeader, ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+                    End If
+
+                    ' Write values
+                    ws.Cells(i, tisColIndexes(statusCountColHeader)).Value = CLng(inStatusCount)
+
+                    ' Convert ms to Excel time (days)
+                    Dim durationDays As Double
+                    durationDays = CDbl(durationMs) / 1000 / 86400
+
+                    With ws.Cells(i, tisColIndexes(statusDurationColHeader))
+                        .Value = durationDays
+                        .NumberFormat = "d ""days"" hh:mm:ss"
+                    End With
+                End If
+            Next k
+        End If
+    Next i
+
+    MsgBox "Processing complete."
+End Sub

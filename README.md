@@ -17,7 +17,7 @@ The macro adds new columns. The output will look like this:
 To get the list of statuses in a give Atlassian site, you can use this command below and update the macro and add necessary keys (staus ID, status name).
 
 ```shell
-.\curl.exe --insecure -H "Accept: application/json" --user john@gmail.com:123mytoken789 https://mysite.atlassian.net/rest/api/3/status
+.\curl.exe -H "Accept: application/json" --user john@gmail.com:123mytoken789 https://mysite.atlassian.net/rest/api/3/status
 ```
 
 ```json

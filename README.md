@@ -11,8 +11,8 @@ The macro adds new columns. The output will look like this:
 
 | Custom field ([CHART] Time in Status) | [TiS] OPEN - Count | [TiS] OPEN - Duration | [TiS] Req in progress - Count | [TiS] Req in progress - Duration | ... |
 | --- | --- | --- | --- | --- | --- |
-| 1_*:*_1_*:*_15888_*\|*_3_*:*_1_*:*_0_*\|*_10000_*:*_1_*:*_34198 | 1 | 0 days 00:00:16 | ... |
-| 1_*:*_1_*:*_580626_*\|*_10390_*:*_1_*:*_13406_*\|*_3_*:*_1_*:*_2147_*\|*_10000_*:*_1_*:*_1767_*\|*_10387_*:*_3_*:*_2198_*\|*_10277_*:*_1_*:*_1666 | 1 | 0 days 00:09:41 | 3 | 0 days 00:00:02 | ... |
+| 1_\*:\*_1_\*:\*_15888_\*\|\*_3_\*:\*_1_\*:\*_0_\*\|\*_10000_\*:\*_1_\*:\*_34198 | 1 | 0 days 00:00:16 | ... |
+| 1_\*:\*_1_\*:\*_580626_\*\|\*_10390_\*:\*_1_\*:\*_13406_\*\|\*_3_\*:\*_1_\*:\*_2147_\*\|\*_10000_\*:\*_1_\*:\*_1767_\*\|\*_10387_\*:\*_3_\*:\*_2198_\*\|\*_10277_\*:\*_1_\*:\*_1666 | 1 | 0 days 00:09:41 | 3 | 0 days 00:00:02 | ... |
 
 To get the list of statuses in a give Atlassian site, you can use this command below and update the macro and add necessary keys (staus ID, status name).
 
